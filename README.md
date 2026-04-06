@@ -71,7 +71,13 @@ npm run prisma:migrate -- --name init
 npm run dev
 ```
 
-7. Open Swagger documentation:
+7. Seed demo users and financial data:
+
+```bash
+npm run seed
+```
+
+8. Open Swagger documentation:
 
 `http://localhost:4000/api/docs`
 
@@ -88,6 +94,27 @@ npm run dev
 - `BOOTSTRAP_ADMIN_NAME`: Optional default admin name
 - `BOOTSTRAP_ADMIN_EMAIL`: Optional default admin email
 - `BOOTSTRAP_ADMIN_PASSWORD`: Optional default admin password
+
+## Deployment
+
+- GitHub repository: [aditya-devm02/finance-data-processing-access-control-backend](https://github.com/aditya-devm02/finance-data-processing-access-control-backend)
+- Live API: [https://finance-data-processing-access-cont-bay.vercel.app/api](https://finance-data-processing-access-cont-bay.vercel.app/api)
+- Swagger docs: [https://finance-data-processing-access-cont-bay.vercel.app/api/docs/](https://finance-data-processing-access-cont-bay.vercel.app/api/docs/)
+- Health check: [https://finance-data-processing-access-cont-bay.vercel.app/api/health](https://finance-data-processing-access-cont-bay.vercel.app/api/health)
+
+## Demo Credentials
+
+- Admin
+  - Email: `admin@finance-backend-demo.local`
+  - Password: `Admin@Md7N8X6d1j2K`
+- Analyst
+  - Email: `analyst@finance-backend-demo.local`
+  - Password: `Analyst@Demo123`
+- Viewer
+  - Email: `viewer@finance-backend-demo.local`
+  - Password: `Viewer@Demo123`
+
+These accounts are seeded for live demo and reviewer access. Rotate them after submission if you continue using the project publicly.
 
 ## API Endpoints
 
@@ -176,6 +203,12 @@ Run unit tests with:
 
 ```bash
 npm test
+```
+
+Run the seed script with:
+
+```bash
+npm run seed
 ```
 
 Current tests cover:
