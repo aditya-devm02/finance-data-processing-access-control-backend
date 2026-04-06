@@ -1,0 +1,873 @@
+openapi: 3.0.3
+info:
+  title: Finance Data Processing and Access Control Backend
+  version: 1.0.0
+  description: >
+    Production-style backend APIs for finance data processing, JWT authentication,
+    role-based access control, financial record management, and analytics.
+servers:
+  - url: http://localhost:4000/api
+tags:
+  - name: Auth
+  - name: Users
+  - name: Financial Records
+  - name: Dashboard
+  - name: Analytics
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    UserId:
+      in: path
+      name: id
+      required: true
+      description: User UUID
+      schema:
+        type: string
+        format: uuid
+    RecordId:
+      in: path
+      name: id
+      required: true
+      description: Financial record UUID
+      schema:
+        type: string
+        format: uuid
+    Page:
+      in: query
+      name: page
+      description: Page number for paginated listings
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Limit:
+      in: query
+      name: limit
+      description: Page size for paginated listings
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+    Category:
+      in: query
+      name: category
+      description: Exact category filter
+      schema:
+        type: string
+    RecordType:
+      in: query
+      name: type
+      description: Record type filter
+      schema:
+        type: string
+        enum: [INCOME, EXPENSE]
+    StartDate:
+      in: query
+      name: startDate
+      description: Inclusive range start in ISO-8601 format
+      schema:
+        type: string
+        format: date-time
+    EndDate:
+      in: query
+      name: endDate
+      description: Inclusive range end in ISO-8601 format
+      schema:
+        type: string
+        format: date-time
+    Search:
+      in: query
+      name: search
+      description: Case-insensitive search against category and description
+      schema:
+        type: string
+    RecentLimit:
+      in: query
+      name: limit
+      description: Number of recent transactions to return in analytics responses
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 5
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Validation failed
+            details:
+              nullable: true
+      required: [success, error]
+    SuccessEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: admin@example.com
+        password:
+          type: string
+          example: Admin@12345
+    CreateUserRequest:
+      type: object
+      required: [name, email, password, role]
+      properties:
+        name:
+          type: string
+          example: Priya Sharma
+        email:
+          type: string
+          format: email
+          example: priya@example.com
+        password:
+          type: string
+          example: Password1
+        role:
+          type: string
+          enum: [VIEWER, ANALYST, ADMIN]
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+          default: ACTIVE
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        role:
+          type: string
+          enum: [VIEWER, ANALYST, ADMIN]
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+    CreateFinancialRecordRequest:
+      type: object
+      required: [amount, type, category, date]
+      properties:
+        amount:
+          type: number
+          example: 3500.75
+        type:
+          type: string
+          enum: [INCOME, EXPENSE]
+        category:
+          type: string
+          example: Salary
+        date:
+          type: string
+          format: date-time
+          example: "2026-04-01T00:00:00.000Z"
+        description:
+          type: string
+          example: Monthly payroll
+    UpdateFinancialRecordRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+        type:
+          type: string
+          enum: [INCOME, EXPENSE]
+        category:
+          type: string
+        date:
+          type: string
+          format: date-time
+        description:
+          type: string
+          nullable: true
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [VIEWER, ANALYST, ADMIN]
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, name, email, role, status, createdAt, updatedAt]
+    FinancialRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        type:
+          type: string
+          enum: [INCOME, EXPENSE]
+        category:
+          type: string
+        date:
+          type: string
+          format: date-time
+        description:
+          type: string
+          nullable: true
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, amount, type, category, date, createdBy, createdAt, updatedAt]
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            accessToken:
+              type: string
+            tokenType:
+              type: string
+              example: Bearer
+            expiresIn:
+              type: string
+              example: 1h
+            user:
+              $ref: "#/components/schemas/User"
+          required: [accessToken, tokenType, expiresIn, user]
+      required: [success, data]
+    UserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/User"
+      required: [success, data]
+    UserListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+      required: [success, data]
+    FinancialRecordResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/FinancialRecord"
+      required: [success, data]
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required: [page, limit, total, totalPages]
+    FinancialRecordListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialRecord"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+      required: [success, data, meta]
+    MessageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Operation completed successfully
+          required: [message]
+      required: [success, data]
+    DashboardSummary:
+      type: object
+      properties:
+        totalIncome:
+          type: number
+        totalExpenses:
+          type: number
+        netBalance:
+          type: number
+        recordCount:
+          type: integer
+      required: [totalIncome, totalExpenses, netBalance, recordCount]
+    DashboardSummaryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/DashboardSummary"
+      required: [success, data]
+    CategoryTotal:
+      type: object
+      properties:
+        category:
+          type: string
+        income:
+          type: number
+        expense:
+          type: number
+        net:
+          type: number
+      required: [category, income, expense, net]
+    TrendPoint:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "2026-04"
+        income:
+          type: number
+        expense:
+          type: number
+        net:
+          type: number
+      required: [period, income, expense, net]
+    DateSummary:
+      type: object
+      properties:
+        date:
+          type: string
+          example: "2026-04-01"
+        income:
+          type: number
+        expense:
+          type: number
+        net:
+          type: number
+      required: [date, income, expense, net]
+    AnalyticsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            totalIncome:
+              type: number
+            totalExpenses:
+              type: number
+            netBalance:
+              type: number
+            categoryWiseTotals:
+              type: array
+              items:
+                $ref: "#/components/schemas/CategoryTotal"
+            monthlyTrends:
+              type: array
+              items:
+                $ref: "#/components/schemas/TrendPoint"
+            weeklyTrends:
+              type: array
+              items:
+                $ref: "#/components/schemas/TrendPoint"
+            recentTransactions:
+              type: array
+              items:
+                $ref: "#/components/schemas/FinancialRecord"
+            summaryByDate:
+              type: array
+              items:
+                $ref: "#/components/schemas/DateSummary"
+          required:
+            [totalIncome, totalExpenses, netBalance, categoryWiseTotals, monthlyTrends, weeklyTrends, recentTransactions, summaryByDate]
+      required: [success, data]
+paths:
+  /health:
+    get:
+      tags: [Dashboard]
+      summary: Health check endpoint
+      responses:
+        "200":
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: ok
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate a user and issue a JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Inactive user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users:
+    get:
+      tags: [Users]
+      summary: List all non-deleted users
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Users fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [Users]
+      summary: Create a new user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Duplicate email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Fetch one user by UUID
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags: [Users]
+      summary: Update an existing user
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Duplicate email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [Users]
+      summary: Soft delete a user
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Business-rule violation such as deleting the last admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /records:
+    get:
+      tags: [Financial Records]
+      summary: List financial records with filtering, search, and pagination
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Category"
+        - $ref: "#/components/parameters/RecordType"
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
+        - $ref: "#/components/parameters/Search"
+      responses:
+        "200":
+          description: Records fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialRecordListResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [Financial Records]
+      summary: Create a financial record
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFinancialRecordRequest"
+      responses:
+        "201":
+          description: Record created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialRecordResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /records/{id}:
+    get:
+      tags: [Financial Records]
+      summary: Fetch one financial record by UUID
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RecordId"
+      responses:
+        "200":
+          description: Record fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialRecordResponse"
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Financial record not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags: [Financial Records]
+      summary: Update a financial record
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RecordId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFinancialRecordRequest"
+      responses:
+        "200":
+          description: Record updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialRecordResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Financial record not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [Financial Records]
+      summary: Soft delete a financial record
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RecordId"
+      responses:
+        "200":
+          description: Record deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: Financial record not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: Fetch dashboard summary totals
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
+        - $ref: "#/components/parameters/RecentLimit"
+      responses:
+        "200":
+          description: Dashboard summary fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummaryResponse"
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /analytics/summary:
+    get:
+      tags: [Analytics]
+      summary: Fetch aggregated finance analytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/StartDate"
+        - $ref: "#/components/parameters/EndDate"
+        - $ref: "#/components/parameters/RecentLimit"
+      responses:
+        "200":
+          description: Analytics fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
