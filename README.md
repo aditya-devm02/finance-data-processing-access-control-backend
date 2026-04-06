@@ -106,13 +106,13 @@ npm run seed
 
 - Admin
   - Email: `admin@finance-backend-demo.local`
-  - Password: `Admin@Md7N8X6d1j2K`
+  - Password: `admin123`
 - Analyst
   - Email: `analyst@finance-backend-demo.local`
-  - Password: `Analyst@Demo123`
+  - Password: `analyst123`
 - Viewer
   - Email: `viewer@finance-backend-demo.local`
-  - Password: `Viewer@Demo123`
+  - Password: `viewer123`
 
 These accounts are seeded for live demo and reviewer access. Rotate them after submission if you continue using the project publicly.
 
