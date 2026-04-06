@@ -116,6 +116,108 @@ npm run seed
 
 These accounts are seeded for live demo and reviewer access. Rotate them after submission if you continue using the project publicly.
 
+## Terminal Testing
+
+Anyone testing the deployed API from a terminal can use these `curl` commands directly.
+
+Base URL:
+
+```bash
+BASE_URL="https://finance-data-processing-access-cont-bay.vercel.app/api"
+```
+
+Health check:
+
+```bash
+curl "$BASE_URL/health"
+```
+
+Admin login:
+
+```bash
+curl -X POST "$BASE_URL/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@finance-backend-demo.local","password":"admin123"}'
+```
+
+Analyst login:
+
+```bash
+curl -X POST "$BASE_URL/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"analyst@finance-backend-demo.local","password":"analyst123"}'
+```
+
+Viewer login:
+
+```bash
+curl -X POST "$BASE_URL/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"viewer@finance-backend-demo.local","password":"viewer123"}'
+```
+
+Save a JWT token into a shell variable:
+
+```bash
+TOKEN=$(curl -s -X POST "$BASE_URL/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@finance-backend-demo.local","password":"admin123"}' | jq -r '.data.accessToken')
+```
+
+If `jq` is not installed, copy the `accessToken` manually from the login response and set it like this:
+
+```bash
+TOKEN="paste-access-token-here"
+```
+
+Use the token on protected routes:
+
+Dashboard summary:
+
+```bash
+curl "$BASE_URL/dashboard/summary" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Records with pagination:
+
+```bash
+curl "$BASE_URL/records?page=1&limit=5" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Analytics summary:
+
+```bash
+curl "$BASE_URL/analytics/summary" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Admin-only users endpoint:
+
+```bash
+curl "$BASE_URL/users" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Filtering and search examples:
+
+```bash
+curl "$BASE_URL/records?page=1&limit=5&type=EXPENSE&category=Rent" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+```bash
+curl "$BASE_URL/records?page=1&limit=5&search=salary" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Open Swagger docs in the browser:
+
+```bash
+open "https://finance-data-processing-access-cont-bay.vercel.app/api/docs/"
+```
+
 ## API Endpoints
 
 - `POST /api/auth/login`
